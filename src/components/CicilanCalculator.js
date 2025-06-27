@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { cicilanAPI } from '../services/api';
-import { formatCurrency, formatNumber, parseCurrency, validateCicilanInput } from '../utils';
+// import { cicilanAPI } from '../services/api'; // API dinonaktifkan untuk sementara
+import { formatCurrency, formatNumber, parseCurrency, validateCicilanInput } from '../utils'; // Path import diperbaiki
 
 const CicilanCalculator = () => {
     const [formData, setFormData] = useState({
@@ -9,14 +9,14 @@ const CicilanCalculator = () => {
         jangkaWaktu: '',
         clientName: ''
     });
-    
+
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
+
         if (name === 'otr' || name === 'dp') {
             const numValue = parseCurrency(value);
             setFormData(prev => ({
@@ -29,7 +29,7 @@ const CicilanCalculator = () => {
                 [name]: value
             }));
         }
-        
+
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -40,29 +40,57 @@ const CicilanCalculator = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const validation = validateCicilanInput(formData.otr, formData.dp, formData.jangkaWaktu);
-        
+
         if (!validation.isValid) {
             setErrors(validation.errors);
             return;
         }
-        
+
         setLoading(true);
         setErrors({});
-        
-        try {
-            const response = await cicilanAPI.calculateCicilan(formData);
-            setResult(response.data);
-            
-            if (formData.clientName && response.data.kontrakNo) {
-                alert(`✅ Kontrak berhasil dibuat dengan nomor: ${response.data.kontrakNo}`);
+
+        // --- SIMULASI API DENGAN DATA DUMMY ---
+        // Fungsi API yang asli dinonaktifkan dan diganti dengan data tiruan
+        // untuk fokus pada perbaikan tampilan (UI).
+        setTimeout(() => {
+            const otrNum = parseFloat(formData.otr) || 0;
+            const dpNum = parseFloat(formData.dp) || 0;
+            const jangkaWaktuNum = parseInt(formData.jangkaWaktu) || 0;
+
+            const pokokUtang = otrNum - dpNum;
+            // Bunga ditentukan secara manual untuk simulasi
+            let bungaPersen = 16.5;
+            if (jangkaWaktuNum <= 12) {
+                bungaPersen = 12;
+            } else if (jangkaWaktuNum <= 24) {
+                bungaPersen = 14;
             }
-        } catch (error) {
-            setErrors({ submit: error.message || 'Terjadi kesalahan saat menghitung cicilan' });
-        } finally {
+
+            const totalBunga = pokokUtang * (bungaPersen / 100);
+            const totalUtang = pokokUtang + totalBunga;
+            const angsuranPerBulan = totalUtang / jangkaWaktuNum;
+
+            const dummyResult = {
+                otr: otrNum,
+                dp: dpNum,
+                jangkaWaktu: jangkaWaktuNum,
+                pokokUtang: pokokUtang,
+                bungaPersen: bungaPersen,
+                totalBunga: totalBunga,
+                totalUtang: totalUtang,
+                angsuranPerBulan: angsuranPerBulan,
+                kontrakNo: formData.clientName ? `DUMMY-${Math.floor(Math.random() * 1000)}` : null,
+            };
+            setResult(dummyResult);
+
+            if (formData.clientName && dummyResult.kontrakNo) {
+                alert(`✅ Mode Desain: Kontrak dummy berhasil dibuat dengan nomor: ${dummyResult.kontrakNo}`);
+            }
             setLoading(false);
-        }
+        }, 1000); // Menambahkan delay 1 detik untuk simulasi loading
+        // --- AKHIR SIMULASI API ---
     };
 
     const handleReset = () => {
@@ -95,7 +123,7 @@ const CicilanCalculator = () => {
                 {/* Form Section */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                     <h2 className="text-xl font-semibold mb-4">Input Data Kendaraan</h2>
-                    
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -109,9 +137,8 @@ const CicilanCalculator = () => {
                                     value={formData.otr ? formatNumber(formData.otr) : ''}
                                     onChange={handleInputChange}
                                     placeholder="240.000.000"
-                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                        errors.otr ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.otr ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
                             </div>
                             {errors.otr && <p className="text-red-500 text-sm mt-1">{errors.otr}</p>}
@@ -129,11 +156,10 @@ const CicilanCalculator = () => {
                                     value={formData.dp ? formatNumber(formData.dp) : ''}
                                     onChange={handleInputChange}
                                     placeholder="48.000.000"
-                                    className={`w-full pl-10 pr-20 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                        errors.dp ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full pl-10 pr-20 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.dp ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
-                                {formData.otr && formData.dp && (
+                                {formData.otr > 0 && formData.dp > 0 && (
                                     <span className="absolute right-3 top-3 text-green-600 text-sm font-medium">
                                         {calculateDpPercentage()}%
                                     </span>
@@ -155,9 +181,8 @@ const CicilanCalculator = () => {
                                     placeholder="18"
                                     min="1"
                                     max="60"
-                                    className={`w-full pr-16 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                        errors.jangkaWaktu ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full pr-16 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.jangkaWaktu ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                 />
                                 <span className="absolute right-3 top-3 text-gray-500">bulan</span>
                             </div>
@@ -174,7 +199,7 @@ const CicilanCalculator = () => {
                                 value={formData.clientName}
                                 onChange={handleInputChange}
                                 placeholder="Masukkan nama klien"
-                                className="w-full py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <p className="text-gray-500 text-sm mt-1">Jika diisi, data akan disimpan ke database</p>
                         </div>
@@ -205,8 +230,8 @@ const CicilanCalculator = () => {
                 </div>
 
                 {/* Result Section */}
-                {result && (
-                    <div className="bg-white rounded-lg shadow-md p-6">
+                {result && !loading && (
+                    <div className="bg-white rounded-lg shadow-md p-6 animate-fadeIn">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-semibold">Hasil Perhitungan</h2>
                             {result.kontrakNo && (
@@ -215,46 +240,46 @@ const CicilanCalculator = () => {
                                 </span>
                             )}
                         </div>
-                        
+
                         <div className="space-y-3">
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Harga OTR</span>
                                 <span className="font-medium">{formatCurrency(result.otr)}</span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Down Payment</span>
                                 <span className="font-medium">{formatCurrency(result.dp)}</span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Pokok Utang</span>
                                 <span className="font-semibold text-blue-600">{formatCurrency(result.pokokUtang)}</span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Jangka Waktu</span>
                                 <span className="font-medium">{result.jangkaWaktu} bulan</span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Bunga</span>
                                 <span className={`font-semibold ${getBungaColor(result.bungaPersen)}`}>
                                     {result.bungaPersen}%
                                 </span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Total Bunga</span>
                                 <span className="font-medium">{formatCurrency(result.totalBunga)}</span>
                             </div>
-                            
+
                             <div className="flex justify-between py-2 border-b border-gray-100">
                                 <span className="text-gray-600">Total Utang</span>
                                 <span className="font-medium">{formatCurrency(result.totalUtang)}</span>
                             </div>
-                            
-                            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg">
+
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg mt-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-lg">Angsuran per Bulan</span>
                                     <span className="text-2xl font-bold">
@@ -282,6 +307,12 @@ const CicilanCalculator = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
+                {loading && (
+                    <div className="flex justify-center items-center bg-white rounded-lg shadow-md p-6">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <p className="ml-4 text-gray-600">Menghitung hasil...</p>
                     </div>
                 )}
             </div>

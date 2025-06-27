@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { cicilanAPI } from '../services/api';
-import { formatCurrency, formatDate } from '../utils';
+// import { cicilanAPI } from '../services/api'; // API dinonaktifkan untuk sementara
+import { formatCurrency, formatDate } from '../utils'; // Path import diperbaiki
 
 const KontrakList = () => {
     const [kontrakList, setKontrakList] = useState([]);
@@ -14,15 +14,51 @@ const KontrakList = () => {
     const fetchKontrakList = async () => {
         setLoading(true);
         setError('');
-        
-        try {
-            const response = await cicilanAPI.getAllKontrak();
-            setKontrakList(response.data);
-        } catch (err) {
-            setError(err.message || 'Terjadi kesalahan saat mengambil data kontrak');
-        } finally {
+
+        // --- SIMULASI API DENGAN DATA DUMMY ---
+        setTimeout(() => {
+            const dummyKontrak = [
+                {
+                    kontrakNo: 'KTR-DUMMY-001',
+                    clientName: 'Budi Santoso',
+                    otr: 250000000,
+                    dp: 50000000,
+                    angsuranPerBulan: 5250000,
+                    jangkaWaktu: 48,
+                    bungaPersen: '16.5',
+                    createdAt: new Date().toISOString(),
+                    stats: { progress: 50, sudahBayar: 24, belumBayar: 24 },
+                    totalUtang: 252000000,
+                },
+                {
+                    kontrakNo: 'KTR-DUMMY-002',
+                    clientName: 'Citra Lestari (Lunas)',
+                    otr: 180000000,
+                    dp: 40000000,
+                    angsuranPerBulan: 4500000,
+                    jangkaWaktu: 36,
+                    bungaPersen: '14.0',
+                    createdAt: new Date().toISOString(),
+                    stats: { progress: 100, sudahBayar: 36, belumBayar: 0 },
+                    totalUtang: 162000000,
+                },
+                {
+                    kontrakNo: 'KTR-DUMMY-003',
+                    clientName: 'Ahmad Dahlan',
+                    otr: 120000000,
+                    dp: 30000000,
+                    angsuranPerBulan: 3100000,
+                    jangkaWaktu: 36,
+                    bungaPersen: '14.0',
+                    createdAt: new Date().toISOString(),
+                    stats: { progress: 10, sudahBayar: 4, belumBayar: 32 },
+                    totalUtang: 111600000,
+                }
+            ];
+            setKontrakList(dummyKontrak);
             setLoading(false);
-        }
+        }, 1000);
+        // --- AKHIR SIMULASI API ---
     };
 
     const getProgressColor = (progress) => {
@@ -32,10 +68,11 @@ const KontrakList = () => {
     };
 
     const getStatusBadge = (stats) => {
+        if (!stats) return null;
         if (stats.belumBayar === 0) {
             return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Lunas</span>;
         } else if (stats.sudahBayar === 0) {
-            return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">Belum Bayar</span>;
+            return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">Baru</span>;
         } else {
             return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">Dalam Proses</span>;
         }
@@ -51,7 +88,7 @@ const KontrakList = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Daftar Kontrak Cicilan</h1>
@@ -77,7 +114,7 @@ const KontrakList = () => {
                 </span>
             </div>
 
-            {kontrakList.length === 0 ? (
+            {kontrakList.length === 0 && !loading ? (
                 <div className="text-center py-12">
                     <div className="text-gray-400 text-6xl mb-4">📄</div>
                     <p className="text-gray-600">Belum ada kontrak yang tersedia</p>
@@ -85,17 +122,17 @@ const KontrakList = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {kontrakList.map((kontrak) => (
-                        <div key={kontrak.kontrakNo} className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div key={kontrak.kontrakNo} className="bg-white rounded-lg shadow-md overflow-hidden animate-fadeIn">
                             <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3 className="text-lg font-semibold">{kontrak.kontrakNo}</h3>
                                         <p className="text-blue-100">{kontrak.clientName}</p>
                                     </div>
-                                    {kontrak.stats && getStatusBadge(kontrak.stats)}
+                                    {getStatusBadge(kontrak.stats)}
                                 </div>
                             </div>
-                            
+
                             <div className="p-4">
                                 <div className="space-y-2 mb-4">
                                     <div className="flex justify-between text-sm">
@@ -128,7 +165,7 @@ const KontrakList = () => {
                                                 <span className="font-medium">{kontrak.stats.progress}%</span>
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2">
-                                                <div 
+                                                <div
                                                     className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(kontrak.stats.progress)}`}
                                                     style={{ width: `${kontrak.stats.progress}%` }}
                                                 ></div>
@@ -156,43 +193,6 @@ const KontrakList = () => {
                             </div>
                         </div>
                     ))}
-                </div>
-            )}
-
-            {/* Summary Statistics */}
-            {kontrakList.length > 0 && (
-                <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-                    <h3 className="text-lg font-semibold mb-4">Ringkasan Statistik</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-blue-50 rounded-lg">
-                            <div className="text-2xl font-bold text-blue-600">{kontrakList.length}</div>
-                            <div className="text-sm text-gray-600">Total Kontrak</div>
-                        </div>
-                        
-                        <div className="text-center p-4 bg-green-50 rounded-lg">
-                            <div className="text-2xl font-bold text-green-600">
-                                {kontrakList.filter(k => k.stats?.belumBayar === 0).length}
-                            </div>
-                            <div className="text-sm text-gray-600">Kontrak Lunas</div>
-                        </div>
-                        
-                        <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                            <div className="text-2xl font-bold text-yellow-600">
-                                {kontrakList.filter(k => k.stats?.sudahBayar > 0 && k.stats?.belumBayar > 0).length}
-                            </div>
-                            <div className="text-sm text-gray-600">Dalam Proses</div>
-                        </div>
-                        
-                        <div className="text-center p-4 bg-purple-50 rounded-lg">
-                            <div className="text-2xl font-bold text-purple-600">
-                                {formatCurrency(
-                                    kontrakList.reduce((sum, k) => sum + parseFloat(k.totalUtang || 0), 0)
-                                )}
-                            </div>
-                            <div className="text-sm text-gray-600">Total Nilai Kontrak</div>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
